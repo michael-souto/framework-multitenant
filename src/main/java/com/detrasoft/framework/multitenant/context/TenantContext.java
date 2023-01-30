@@ -1,14 +1,14 @@
 package com.detrasoft.framework.multitenant.context;
 
+import com.detrasoft.framework.core.context.GenericContext;
+
 public class TenantContext {
 
-	private static ThreadLocal<String> tenantSchema = new ThreadLocal<>();
-
 	public static String getTenantSchema() {
-		return tenantSchema.get();
+		return GenericContext.getContexts("tenant");
 	}
 
-	public static void setTenantSchema(String uuid) {
-		tenantSchema.set(uuid);
+	public static void setTenantSchema(String value) {
+		GenericContext.setContexts("tenant", value);
 	}
 }

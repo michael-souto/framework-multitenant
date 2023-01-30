@@ -40,7 +40,7 @@ public class HibernateConfig {
 
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource);
-        em.setPackagesToScan("br.com.detrasoft");
+        em.setPackagesToScan("com.detrasoft");
         em.setJpaVendorAdapter(this.jpaVendorAdapter());
 
         Map<String, Object> jpaPropertiesMap = new HashMap<>( jpaProperties.getProperties());
