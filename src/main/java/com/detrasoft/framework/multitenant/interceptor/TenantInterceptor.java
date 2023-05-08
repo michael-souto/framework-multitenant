@@ -3,6 +3,7 @@ package com.detrasoft.framework.multitenant.interceptor;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.detrasoft.framework.core.context.GenericContext;
 import com.detrasoft.framework.multitenant.context.TenantContext;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -17,10 +18,14 @@ public class TenantInterceptor implements HandlerInterceptor {
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
 			throws Exception {
 
-		String headerNames = request.getHeader("tenant");
+		String tenant = request.getHeader("tenant");
 
-		if (headerNames != null) {
-			TenantContext.setTenantSchema(headerNames);
+		if (tenant == null) {
+			tenant = GenericContext.getContexts("id_detrasoft");
+		}
+
+		if (tenant != null) {
+			TenantContext.setTenantSchema(tenant);
 		} else {
 			TenantContext
 					.setTenantSchema(HibernateConfig.DEFAULT_SCHEMA);
