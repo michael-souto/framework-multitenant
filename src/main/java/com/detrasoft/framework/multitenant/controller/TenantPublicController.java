@@ -19,13 +19,13 @@ public class TenantPublicController {
     @Autowired
     private DataSource dataSource;
 
-    @Value("${KEY_TENANT}")
+    @Value("${KEY_TENANT:}")
     private String keyTenantEnv;
 
     @GetMapping(value = "/{id}/{key}")
     public ResponseEntity<String> createUpdateTenant(@PathVariable String id, @PathVariable String key) {
         try {
-            if ((keyTenantEnv != null && keyTenantEnv.equals(key))
+            if ((keyTenantEnv != null && !keyTenantEnv.isEmpty() && keyTenantEnv.equals(key))
                     && (id != null && !id.isBlank())
             ) {
                 String schema = TenantContext.getTenantSchema();
