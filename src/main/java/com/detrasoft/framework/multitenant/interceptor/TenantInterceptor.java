@@ -20,7 +20,7 @@ public class TenantInterceptor implements HandlerInterceptor {
 		String tenant = request.getHeader("tenant");
 
 		if (tenant == null) {
-			tenant = GenericContext.getContexts("id_detrasoft");
+			tenant = GenericContext.getContexts("detrasoftId");
 		}
 
 		if (tenant != null) {
