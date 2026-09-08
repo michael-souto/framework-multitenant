@@ -1,7 +1,5 @@
 package com.detrasoft.framework.multitenant.controller;
 
-import com.detrasoft.framework.multitenant.context.TenantContext;
-import org.flywaydb.core.Flyway;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -11,13 +9,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.sql.DataSource;
+import com.detrasoft.framework.multitenant.dto.MigrationResult;
+import com.detrasoft.framework.multitenant.service.TenantMigrationService;
 
 @RestController
 @RequestMapping("/public/tenant-admin")
 public class TenantPublicController {
+
     @Autowired
-    private DataSource dataSource;
+    private TenantMigrationService migrationService;
 
     @Value("${KEY_TENANT:}")
     private String keyTenantEnv;
@@ -28,16 +28,18 @@ public class TenantPublicController {
             if ((keyTenantEnv != null && !keyTenantEnv.isEmpty() && keyTenantEnv.equals(key))
                     && (id != null && !id.isBlank())
             ) {
-                String schema = TenantContext.getTenantSchema();
-                Flyway flywayDML = Flyway.configure().dataSource(dataSource).schemas(id).load();
-                flywayDML.migrate();
-                return new ResponseEntity<>("Ambiente criado com sucesso", HttpStatus.OK);
+                MigrationResult result = migrationService.migrateSchema(id);
+                if (result.isSuccess()) {
+                    return new ResponseEntity<>("Ambiente criado com sucesso", HttpStatus.OK);
+                } else {
+                    return new ResponseEntity<>("Erro ao migrar schema: " + result.getErrorMessage(), HttpStatus.BAD_REQUEST);
+                }
             } else {
                 return new ResponseEntity<>("Não foi possível atualizar o ambiente", HttpStatus.BAD_REQUEST);
             }
 
         } catch (Exception e) {
-            return new ResponseEntity<>("Erro na criação do ambiente" + e.getMessage(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Erro na criação do ambiente: " + e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 }
