@@ -39,22 +39,23 @@ public class TenantMigrationService {
 
     /**
      * Descobre todos os schemas de tenant existentes no banco de dados.
-     * Inclui o schema "public" e todos os schemas não-sistema (como IDs numéricos de tenant).
+     * Inclui o schema "public" e todos os schemas não-sistema (como IDs numéricos
+     * de tenant).
      */
     public List<String> getTenantSchemas() {
         List<String> schemas = new ArrayList<>();
         String sql = """
-            SELECT nspname 
-            FROM pg_namespace 
-            WHERE nspname NOT IN ('information_schema', 'pg_catalog', 'pg_toast') 
-              AND nspname NOT LIKE 'pg_temp_%' 
-              AND nspname NOT LIKE 'pg_toast_temp_%'
-            ORDER BY CASE WHEN nspname = 'public' THEN 0 ELSE 1 END, nspname
-            """;
+                SELECT nspname
+                FROM pg_namespace
+                WHERE nspname NOT IN ('information_schema', 'pg_catalog', 'pg_toast')
+                  AND nspname NOT LIKE 'pg_temp_%'
+                  AND nspname NOT LIKE 'pg_toast_temp_%'
+                ORDER BY CASE WHEN nspname = 'public' THEN 0 ELSE 1 END, nspname
+                """;
 
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
+                PreparedStatement ps = conn.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
                 String schemaName = rs.getString("nspname");
@@ -103,6 +104,10 @@ public class TenantMigrationService {
                     .locations("classpath:db/migration")
                     .load();
 
+            // Repair primeiro para atualizar checksums caso o conteúdo do SQL tenha mudado.
+            // Isso é seguro pois o repair só atualiza metadados no flyway_schema_history.
+            flyway.repair();
+
             MigrateResult result = flyway.migrate();
             long duration = System.currentTimeMillis() - startTime;
             log.info("[MULTITENANT] Schema '{}' migrado com sucesso: {} migrations aplicadas em {}ms",
@@ -129,7 +134,8 @@ public class TenantMigrationService {
     }
 
     /**
-     * Executa a migração em todos os schemas utilizando Virtual Threads com controle de concorrência.
+     * Executa a migração em todos os schemas utilizando Virtual Threads com
+     * controle de concorrência.
      */
     public List<MigrationResult> migrateAllSchemas() {
         return migrateAllSchemas(defaultConcurrency);
@@ -178,7 +184,8 @@ public class TenantMigrationService {
         long successCount = results.stream().filter(MigrationResult::isSuccess).count();
         int totalMigrations = results.stream().mapToInt(MigrationResult::getMigrationsExecuted).sum();
 
-        log.info("[MULTITENANT] Concluída migração de todos os schemas em {}ms. Sucesso: {}/{}, Total de migrations executadas: {}",
+        log.info(
+                "[MULTITENANT] Concluída migração de todos os schemas em {}ms. Sucesso: {}/{}, Total de migrations executadas: {}",
                 totalDuration, successCount, schemas.size(), totalMigrations);
 
         return results;
