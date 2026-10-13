@@ -102,6 +102,8 @@ public class TenantMigrationService {
                     .schemas(schema)
                     .defaultSchema(schema)
                     .locations("classpath:db/migration")
+                    .baselineOnMigrate(true)
+                    .baselineVersion("0")
                     .load();
 
             // Repair primeiro para atualizar checksums caso o conteúdo do SQL tenha mudado.
