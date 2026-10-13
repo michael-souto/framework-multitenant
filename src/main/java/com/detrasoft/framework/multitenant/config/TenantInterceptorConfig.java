@@ -9,7 +9,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import com.detrasoft.framework.multitenant.interceptor.TenantInterceptor;
 
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Order(Ordered.LOWEST_PRECEDENCE)
 public class TenantInterceptorConfig implements WebMvcConfigurer {
 
