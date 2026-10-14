@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.detrasoft.framework.multitenant.config.FlywayNativeSupport;
 import com.detrasoft.framework.multitenant.dto.MigrationResult;
 
 @Service
@@ -97,14 +98,15 @@ public class TenantMigrationService {
         long startTime = System.currentTimeMillis();
         log.info("[MULTITENANT] Iniciando migration para o schema '{}'...", schema);
         try {
-            Flyway flyway = Flyway.configure()
+            Flyway flyway = FlywayNativeSupport.nativeCompatible(Flyway.configure()
                     .dataSource(dataSource)
                     .schemas(schema)
                     .defaultSchema(schema)
                     .locations("classpath:db/migration")
                     .baselineOnMigrate(true)
-                    .baselineVersion("0")
+                    .baselineVersion("0"))
                     .load();
+            FlywayNativeSupport.assertMigrationsResolved(flyway);
 
             // Repair primeiro para atualizar checksums caso o conteúdo do SQL tenha mudado.
             // Isso é seguro pois o repair só atualiza metadados no flyway_schema_history.
