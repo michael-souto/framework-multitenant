@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.detrasoft.framework.multitenant.context.TenantContext;
+import com.detrasoft.framework.core.context.GenericContext;
 import com.detrasoft.framework.multitenant.dto.MigrationResult;
 import com.detrasoft.framework.multitenant.service.TenantMigrationService;
 
@@ -23,12 +23,13 @@ public class TenantController {
 	@GetMapping
 	public ResponseEntity<String> createUpdateTenant() {
 		try {
-			String schema = TenantContext.getTenantSchema();
+			String schema = GenericContext.getContexts("detrasoftId");
 			MigrationResult result = migrationService.migrateSchema(schema);
 			if (result.isSuccess()) {
 				return new ResponseEntity<>("Ambiente criado/atualizado com sucesso", HttpStatus.OK);
 			} else {
-				return new ResponseEntity<>("Erro na criação/atualização do ambiente: " + result.getErrorMessage(), HttpStatus.BAD_REQUEST);
+				return new ResponseEntity<>("Erro na criação/atualização do ambiente: " + result.getErrorMessage(),
+						HttpStatus.BAD_REQUEST);
 			}
 		} catch (Exception e) {
 			return new ResponseEntity<>("Erro na criação do ambiente: " + e.getMessage(), HttpStatus.BAD_REQUEST);

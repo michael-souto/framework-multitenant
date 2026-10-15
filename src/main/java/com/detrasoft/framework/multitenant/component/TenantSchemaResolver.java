@@ -1,7 +1,7 @@
 package com.detrasoft.framework.multitenant.component;
 
+import com.detrasoft.framework.core.context.GenericContext;
 import com.detrasoft.framework.multitenant.config.DatabaseSettings;
-import com.detrasoft.framework.multitenant.context.TenantContext;
 import org.hibernate.cfg.AvailableSettings;
 import org.hibernate.context.spi.CurrentTenantIdentifierResolver;
 import org.springframework.boot.hibernate.autoconfigure.HibernatePropertiesCustomizer;
@@ -14,7 +14,7 @@ public class TenantSchemaResolver implements CurrentTenantIdentifierResolver, Hi
 
 	@Override
 	public String resolveCurrentTenantIdentifier() {
-		String t = TenantContext.getTenantSchema();
+		String t = GenericContext.getContexts("detrasoftId");
 		if (t != null) {
 			return t;
 		} else {
@@ -26,6 +26,7 @@ public class TenantSchemaResolver implements CurrentTenantIdentifierResolver, Hi
 	public boolean validateExistingCurrentSessions() {
 		return true;
 	}
+
 	@Override
 	public void customize(Map<String, Object> hibernateProperties) {
 		hibernateProperties.put(AvailableSettings.MULTI_TENANT_IDENTIFIER_RESOLVER, this);

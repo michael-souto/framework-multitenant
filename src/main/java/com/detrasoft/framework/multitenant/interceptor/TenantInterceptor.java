@@ -7,7 +7,6 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import com.detrasoft.framework.core.context.GenericContext;
 import com.detrasoft.framework.multitenant.config.DatabaseSettings;
-import com.detrasoft.framework.multitenant.context.TenantContext;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
@@ -41,7 +40,8 @@ public class TenantInterceptor implements HandlerInterceptor {
 		String requested = request.getHeader(TENANT_HEADER);
 
 		if (requested == null || requested.isBlank() || requested.equals(homeTenant)) {
-			TenantContext.setTenantSchema(homeTenant != null ? homeTenant : DatabaseSettings.DEFAULT_TENANT);
+			GenericContext.setContexts("detrasoftId",
+					homeTenant != null ? homeTenant : DatabaseSettings.DEFAULT_TENANT);
 			return true;
 		}
 
@@ -50,7 +50,7 @@ public class TenantInterceptor implements HandlerInterceptor {
 			return false;
 		}
 
-		TenantContext.setTenantSchema(requested);
+		GenericContext.setContexts("detrasoftId", requested);
 		return true;
 	}
 
@@ -58,7 +58,7 @@ public class TenantInterceptor implements HandlerInterceptor {
 	public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler,
 			Exception ex) throws Exception {
 		// afterCompletion roda mesmo com excecao no handler (postHandle nao).
-		TenantContext.setTenantSchema(null);
+		GenericContext.setContexts("detrasoftId", null);
 	}
 
 	private boolean isAllowed(String homeTenant, String requested) {
