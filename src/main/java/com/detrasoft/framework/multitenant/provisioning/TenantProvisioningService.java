@@ -163,6 +163,15 @@ public class TenantProvisioningService {
 				markerExists = rs.getBoolean(3);
 			}
 		}
+		if (migrated) {
+			// A tabela de historico nasce antes da primeira migration (linhas SCHEMA/BASELINE):
+			// so conta como migrado com ao menos uma migration aplicada e nenhuma falha.
+			try (Statement st = connection.createStatement();
+					ResultSet rs = st.executeQuery("SELECT count(*) FILTER (WHERE success AND type NOT IN ('SCHEMA', 'BASELINE')) > 0"
+							+ " AND coalesce(bool_and(success), false) FROM " + quote(tenant) + ".flyway_schema_history")) {
+				migrated = rs.next() && rs.getBoolean(1);
+			}
+		}
 		String markerStatus = null;
 		if (markerExists) {
 			try (Statement st = connection.createStatement();
