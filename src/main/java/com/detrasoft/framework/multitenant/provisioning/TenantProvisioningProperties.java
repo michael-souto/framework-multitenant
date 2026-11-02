@@ -30,8 +30,14 @@ public class TenantProvisioningProperties {
 	@Value("${multitenant.provisioning.create-queue:q.tenant.${multitenant.provisioning.product:}.create}")
 	private String createQueue;
 
+	@Value("${multitenant.provisioning.events-exchange:ex.customer.events}")
+	private String eventsExchange;
+
 	@Value("${multitenant.provisioning.completed-exchange:ex.customer.completed}")
 	private String completedExchange;
+
+	@Value("${multitenant.provisioning.completed-queue:q.tenant.${multitenant.provisioning.product:}.completed}")
+	private String completedQueue;
 
 	@Value("${multitenant.provisioning.completed-routing-key:rk.tenant.${multitenant.provisioning.product:}.completed}")
 	private String completedRoutingKey;
@@ -54,8 +60,16 @@ public class TenantProvisioningProperties {
 		return createQueue;
 	}
 
+	public String getEventsExchange() {
+		return eventsExchange;
+	}
+
 	public String getCompletedExchange() {
 		return completedExchange;
+	}
+
+	public String getCompletedQueue() {
+		return completedQueue;
 	}
 
 	public String getCompletedRoutingKey() {
