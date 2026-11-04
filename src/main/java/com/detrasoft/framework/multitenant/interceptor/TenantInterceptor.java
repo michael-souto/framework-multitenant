@@ -24,6 +24,12 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @Component
 public class TenantInterceptor implements HandlerInterceptor {
 
+	/**
+	 * detrasoftId do token, preservado aqui porque "detrasoftId" passa a ser o
+	 * schema da requisicao. Igual ao "detrasoftId" fora do acesso cruzado.
+	 */
+	public static final String HOME_TENANT_CONTEXT = "homeDetrasoftId";
+
 	private static final String TENANT_HEADER = "tenant";
 	private static final Pattern TENANT_PATTERN = Pattern.compile("^\\d{1,19}$");
 
@@ -38,6 +44,7 @@ public class TenantInterceptor implements HandlerInterceptor {
 			throws Exception {
 		String homeTenant = GenericContext.getContexts("detrasoftId");
 		String requested = request.getHeader(TENANT_HEADER);
+		GenericContext.setContexts(HOME_TENANT_CONTEXT, homeTenant);
 
 		if (requested == null || requested.isBlank() || requested.equals(homeTenant)) {
 			GenericContext.setContexts("detrasoftId",
@@ -59,6 +66,7 @@ public class TenantInterceptor implements HandlerInterceptor {
 			Exception ex) throws Exception {
 		// afterCompletion roda mesmo com excecao no handler (postHandle nao).
 		GenericContext.setContexts("detrasoftId", null);
+		GenericContext.setContexts(HOME_TENANT_CONTEXT, null);
 	}
 
 	private boolean isAllowed(String homeTenant, String requested) {
