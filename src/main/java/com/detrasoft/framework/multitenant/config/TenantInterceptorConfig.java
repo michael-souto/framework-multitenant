@@ -18,7 +18,9 @@ public class TenantInterceptorConfig implements WebMvcConfigurer {
 
 	@Override
 	public void addInterceptors(InterceptorRegistry registry) {
-		registry.addInterceptor(tenantInterceptor);
+		// Antes do OpenEntityManagerInViewInterceptor: a sessao do Hibernate fixa o tenant
+		// ao abrir, entao o schema (inclusive o do header "tenant") precisa estar definido.
+		registry.addInterceptor(tenantInterceptor).order(Ordered.HIGHEST_PRECEDENCE);
 	}
 
 }
