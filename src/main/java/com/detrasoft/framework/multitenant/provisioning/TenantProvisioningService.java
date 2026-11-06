@@ -149,13 +149,15 @@ public class TenantProvisioningService {
 		boolean schemaExists;
 		boolean migrated;
 		boolean markerExists;
+		String history = migrationService.getHistoryTable();
 		try (PreparedStatement ps = connection.prepareStatement("""
 				SELECT EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = ?),
-				       to_regclass(format('%I.flyway_schema_history', ?::text)) IS NOT NULL,
+				       to_regclass(format('%I.%I', ?::text, ?::text)) IS NOT NULL,
 				       to_regclass(format('%I.""" + MARKER_TABLE + "', ?::text)) IS NOT NULL")) {
 			ps.setString(1, tenant);
 			ps.setString(2, tenant);
-			ps.setString(3, tenant);
+			ps.setString(3, history);
+			ps.setString(4, tenant);
 			try (ResultSet rs = ps.executeQuery()) {
 				rs.next();
 				schemaExists = rs.getBoolean(1);
@@ -168,7 +170,7 @@ public class TenantProvisioningService {
 			// so conta como migrado com ao menos uma migration aplicada e nenhuma falha.
 			try (Statement st = connection.createStatement();
 					ResultSet rs = st.executeQuery("SELECT count(*) FILTER (WHERE success AND type NOT IN ('SCHEMA', 'BASELINE')) > 0"
-							+ " AND coalesce(bool_and(success), false) FROM " + quote(tenant) + ".flyway_schema_history")) {
+							+ " AND coalesce(bool_and(success), false) FROM " + quote(tenant) + "." + quote(history))) {
 				migrated = rs.next() && rs.getBoolean(1);
 			}
 		}

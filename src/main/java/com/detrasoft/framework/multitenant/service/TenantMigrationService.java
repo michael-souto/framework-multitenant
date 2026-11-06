@@ -34,14 +34,36 @@ public class TenantMigrationService {
     @Value("${multitenant.auto-migration.concurrency:5}")
     private int defaultConcurrency;
 
+    /**
+     * Tabela de histórico do Flyway em cada schema. Um nome próprio isola a versão nova de um serviço
+     * de um histórico legado que divide os mesmos schemas (ex.: Speak V3 sobre o banco da V2).
+     */
+    @Value("${multitenant.flyway.table:flyway_schema_history}")
+    private String historyTable = "flyway_schema_history";
+
+    /**
+     * {@code repair()} antes de cada migrate. Padrão true por compatibilidade; desligado, checksum
+     * divergente falha o migrate em vez de ser realinhado em silêncio.
+     */
+    @Value("${multitenant.flyway.repair-on-migrate:true}")
+    private boolean repairOnMigrate = true;
+
+    /** Inclui o schema public na migração de todos os schemas. */
+    @Value("${multitenant.flyway.include-public:true}")
+    private boolean includePublic = true;
+
     public TenantMigrationService(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
+    /** Nome da tabela de histórico do Flyway usada em cada schema de tenant. */
+    public String getHistoryTable() {
+        return historyTable;
+    }
+
     /**
-     * Descobre todos os schemas de tenant existentes no banco de dados.
-     * Inclui o schema "public" e todos os schemas não-sistema (como IDs numéricos
-     * de tenant).
+     * Descobre todos os schemas de tenant existentes no banco de dados: IDs numéricos, schemas que já
+     * tenham a tabela de histórico configurada e, se {@code multitenant.flyway.include-public}, o public.
      */
     public List<String> getTenantSchemas() {
         List<String> schemas = new ArrayList<>();
@@ -73,7 +95,7 @@ public class TenantMigrationService {
 
     private boolean isEligibleTenantSchema(Connection conn, String schemaName) {
         if ("public".equalsIgnoreCase(schemaName)) {
-            return true;
+            return includePublic;
         }
         // Identificadores de tenant são numéricos (detrasoftId)
         if (schemaName.matches("^\\d+$")) {
@@ -81,8 +103,9 @@ public class TenantMigrationService {
         }
         // Ou se já possuir a tabela de histórico do Flyway
         try (PreparedStatement ps = conn.prepareStatement(
-                "SELECT 1 FROM information_schema.tables WHERE table_schema = ? AND table_name = 'flyway_schema_history'")) {
+                "SELECT 1 FROM information_schema.tables WHERE table_schema = ? AND table_name = ?")) {
             ps.setString(1, schemaName);
+            ps.setString(2, historyTable);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
@@ -102,15 +125,17 @@ public class TenantMigrationService {
                     .dataSource(dataSource)
                     .schemas(schema)
                     .defaultSchema(schema)
+                    .table(historyTable)
                     .locations("classpath:db/migration")
                     .baselineOnMigrate(true)
                     .baselineVersion("0"))
                     .load();
             FlywayNativeSupport.assertMigrationsResolved(flyway);
 
-            // Repair primeiro para atualizar checksums caso o conteúdo do SQL tenha mudado.
-            // Isso é seguro pois o repair só atualiza metadados no flyway_schema_history.
-            flyway.repair();
+            if (repairOnMigrate) {
+                // Realinha checksums caso o conteúdo do SQL tenha mudado (só metadados do histórico).
+                flyway.repair();
+            }
 
             MigrateResult result = flyway.migrate();
             long duration = System.currentTimeMillis() - startTime;
